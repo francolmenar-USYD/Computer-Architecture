@@ -16,11 +16,19 @@ architecture behavioral of simple is
 signal func : alu_func_t := ALU_NONE;
 signal A : word := x"00000000";
 signal B : word := x"00000000";
-signal C : std_logic_vector(3 downto 0);
-signal D : word := x"00000000";
+signal C : word := x"00000000";
+signal second_argument : std_logic_vector(11 downto 0);
+signal address : std_logic_vector(3 downto 0);
+signal m_out : word := x"00000000";
 signal aluout : word := x"00000000";
 signal pc : unsigned(word'range) := x"00000000";
 signal regout : word := x"00000000";
+
+signal imm : std_logic_vector(11 downto 0);
+signal rs1 : std_logic_vector(5 downto 0);
+signal func3_mem : funct3_t;
+signal rd : std_logic_vector(5 downto 0);
+signal opcode_m : op_t;
 	 
 component alu is
 port (alu_func : in  alu_func_t;
@@ -37,19 +45,23 @@ end component imem;
 begin
 	alu0: alu port map(
 				alu_func => func,
-            op1 => A,
-            op2 => D,
+            op1 => A, -- Cumulative result
+            op2 => C, -- Second argument from the memory
 				result => aluout);
 
 	imem0: imem port map(
-				addr => C,
-            			dout => D);
+				     addr => address, -- Address for the memory (PC)
+         			 dout => m_out); -- Output value of the memory
 		  
 	A <= regout;
-	-- B <= std_logic_vector(pc);
-	-- C <= std_logic_vector((pc)3 downto 0);
-	-- C <=  std_logic_vector((X"00000000")3 downto 0);
-	C <= std_logic_vector(pc);
+	B <= std_logic_vector(pc);
+	address <= B(3 downto 0);
+	
+	imm <= m_out(31 downto 20);
+	rs1 <= m_out(19 downto 15);
+	--func3_mem <= m_out(14 downto 12);
+	--rd <= m_out(11 downto 7);
+	--opcode_m <= m_out(6 downto 0);
 
 	func <= ALU_ADD;
 	y <= regout;
@@ -65,3 +77,5 @@ begin
 		end if; 
 	end process; 
 end architecture;
+
+
