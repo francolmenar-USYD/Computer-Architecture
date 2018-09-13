@@ -238,18 +238,30 @@ begin
 			end case;
       -- BRANCH OPERATION
 			when	OP_BRANCH =>
+        -- println("Branch");
 			  regwrite <= '0'; -- Do NOT Write into the Register Bank
+
         -- PCSel |        pc
         -----------------------------
         --  "0"  |      pc + 4
         --  "1"  |  pc + branch_imm
-			  if (alu_A = reg_B) then -- TODO Change and set it to all the opcodes
-			    PCSel <= '0';
-			  else
-			    PCSel <= '1';
-			  end if;
-        when others => null;
-			end case;
+
+        case (funct3) is
+                    when "001" =>
+                        if (alu_A = reg_B) then -- TODO Change and set it to all the opcodes
+                          PCSel <= '0';
+                        else
+                          PCSel <= '1';
+                        end if;
+                    -- when "010" => println("Hola");
+                    -- when "011" => println("Hola");
+                    -- when "100" => println("Hola");
+                    -- when "110" => println("Hola");
+                    -- when "111" => println("Hola");
+                    when others => null;
+         end case;
+       when others => null;
+		 end case;
     end process;
 
 	y <= alu_out; -- We output the value of the ALU, we could change it if we want to
