@@ -54,12 +54,14 @@ package common is
     constant SYSTEM_CSRRWI : system_type_t := "101";
     constant SYSTEM_CSRRSI : system_type_t := "110";
     constant SYSTEM_CSRRCI : system_type_t := "111";
-	 
+
     subtype opcode_t is std_logic_vector(6 downto 0);
     constant OP_ITYPE  : opcode_t := "0010011";
     constant OP_RTYPE : opcode_t := "0110011";
     constant OP_STORE : opcode_t := "0100011";
-	 constant OP_BRANCH : opcode_t := "1100011";
+	  constant OP_BRANCH : opcode_t := "1100011";
+    constant OP_UBRANCH : opcode_t := "1101111";
+    constant OP_CALL : opcode_t := "0010111";
 
     -- print a string with a newline
     procedure println (str : in    string);
@@ -77,7 +79,7 @@ package common is
 
     -- ADDI r0, r0, r0
     constant NOP : word := "00000000000000000000000000010011";
-    
+
 end package common;
 
 package body common is
@@ -150,5 +152,5 @@ package body common is
         write(l, slv);
         writeline(output, l);
     end procedure print;
-    
+
 end package body common;
