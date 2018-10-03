@@ -61,7 +61,13 @@ package common is
     constant OP_STORE : opcode_t := "0100011";
 	  constant OP_BRANCH : opcode_t := "1100011";
     constant OP_UBRANCH : opcode_t := "1101111";
-    constant OP_CALL : opcode_t := "0010111";
+    constant OP_AUIPC : opcode_t := "0010111";
+    constant OP_LRBRANCH : opcode_t := "1100111";
+    constant OP_LUI : opcode_t := "0110111";
+
+
+
+
 
     -- print a string with a newline
     procedure println (str : in    string);

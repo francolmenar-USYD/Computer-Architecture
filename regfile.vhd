@@ -34,11 +34,11 @@ begin  -- architecture Behavioral
     -- purpose: create registers
     -- type   : sequential
     -- inputs : clk
-    -- outputs: 
+    -- outputs:
     registers_proc : process (clk) is
     begin  -- process registers_proc
         if rising_edge(clk) then
-            if (we = '1') then
+            if (we = '1' AND reset = '0') then
                 regbank0(to_integer(unsigned(addrw))) <= dataw;
                 regbank1(to_integer(unsigned(addrw))) <= dataw;
             end if;
@@ -48,6 +48,5 @@ begin  -- architecture Behavioral
     -- asynchronous read
     rega <= regbank0(to_integer(unsigned(addra)));
     regb <= regbank1(to_integer(unsigned(addrb)));
-    
-end architecture rtl;
 
+end architecture rtl;

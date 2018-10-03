@@ -146,12 +146,14 @@ begin
   -------------------
   --  "00"  | reg_B
   --  "01"  | imm
-  --  "10"  | imm_rd
+  --  "10"  | unsigned(imm)
   --  "11"  | imm_rd
 
+
   -- Select the second input to the ALU
-	alu_B <= reg_B when op2sel = "00" else
-			imm when op2sel = "01" else
+	alu_B <= reg_B WHEN op2sel = "00" else
+			imm WHEN op2sel = "01" else
+      unsigned(imm) WHEN op2sel = "10" else
 			imm_rd;
 
 
@@ -160,8 +162,9 @@ begin
   --  "0"  |  alu_out
   --  "1"  |  reg_B
 
+
   -- Select the Data to Write into the Register Bank
-   rf_wdata <= alu_out when wbsel = '0' else reg_B;
+   rf_wdata <= alu_out WHEN wbsel = '0' else reg_B;
 
 	-- instruction fields
 	imm(31 downto 12) <= (others => ir(31));
@@ -192,71 +195,67 @@ begin
     -- Check what type of operation it is
 		case opcode is
       -- IMMEDIATE OPERATION
-			when OP_ITYPE =>
+			WHEN OP_ITYPE =>
 				regwrite <= '1'; -- Write into the Register Bank
 				op2sel <= "01";  -- The second input to the ALU is the Immediate Value
         -- Check what operation to be executed
 				case (funct3) is
-                    when "000" => alu_func <= ALU_ADD;
-                    when "001" => alu_func <= ALU_SLL;
-                    when "010" => alu_func <= ALU_SLT;
-                    when "011" => alu_func <= ALU_SLTU;
-                    when "100" => alu_func <= ALU_XOR;
-                    when "110" => alu_func <= ALU_OR;
-                    when "111" => alu_func <= ALU_AND;
-                    when "101" =>
+                    WHEN "000" => alu_func <= ALU_ADD;
+                    WHEN "001" => alu_func <= ALU_SLL;
+                    WHEN "010" => alu_func <= ALU_SLT;
+                    WHEN "011" => alu_func <= ALU_SLTU;
+                    WHEN "100" => alu_func <= ALU_XOR;
+                    WHEN "110" => alu_func <= ALU_OR;
+                    WHEN "111" => alu_func <= ALU_AND;
+                    WHEN "101" =>
                         if (ir(30) = '1') then
                             alu_func <= ALU_SRA;
                         else
                             alu_func <= ALU_SRL;
                         end if;
-
-                    when others => null;
+                    WHEN others => null;
                 end case;
       -- REGISTER-REGISTER OPERATION
-			when OP_RTYPE =>
+			WHEN OP_RTYPE =>
 				regwrite <= '1'; -- Write into the Register Bank
         -- The second input to the ALU is reg_B
 				case (funct3) is
-					when "000" =>
+					WHEN "000" =>
 						if (ir(30) = '1') then
 							 alu_func <= ALU_SUB;
 						else
 							 alu_func <= ALU_ADD;
 						end if;
-					when "001" => alu_func <= ALU_SLL;
-					when "010" => alu_func <= ALU_SLT;
-					when "011" => alu_func <= ALU_SLTU;
-					when "100" => alu_func <= ALU_XOR;
-					when "101" =>
+					WHEN "001" => alu_func <= ALU_SLL;
+					WHEN "010" => alu_func <= ALU_SLT;
+					WHEN "011" => alu_func <= ALU_SLTU;
+					WHEN "100" => alu_func <= ALU_XOR;
+					WHEN "101" =>
 						if (ir(30) = '1') then
 							 alu_func <= ALU_SRA;
 						else
 							 alu_func <= ALU_SRL;
 						end if;
-					when "110"  => alu_func <= ALU_OR;
-					when "111"  => alu_func <= ALU_AND;
-					when others => null;
+					WHEN "110"  => alu_func <= ALU_OR;
+					WHEN "111"  => alu_func <= ALU_AND;
+					WHEN others => null;
 				end case;
       -- STORE OPERATION
-			when OP_STORE =>
+			WHEN OP_STORE =>
 			  regwrite <= '0'; -- Do NOT Write into the Register Bank
 				memwrite <= '1'; -- Write into the Data Memory (DMEM)
-				op2sel <= "10";  -- The second input to the ALU is imm_rd
+				op2sel <= "11";  -- The second input to the ALU is imm_rd
 				case (funct3) is
-          when "000" => alu_func <= ALU_NONE;
-          when "001" => alu_func <= ALU_NONE;
-				  when "010" => alu_func <= ALU_ADD;
-          when "011" => alu_func <= ALU_NONE;
-          when "100" => alu_func <= ALU_NONE;
-          when "101" => alu_func <= ALU_NONE;
-			    when others => null;
+          WHEN "000" => alu_func <= ALU_NONE;
+          WHEN "001" => alu_func <= ALU_NONE;
+				  WHEN "010" => alu_func <= ALU_ADD;
+          WHEN "011" => alu_func <= ALU_NONE;
+          WHEN "100" => alu_func <= ALU_NONE;
+          WHEN "101" => alu_func <= ALU_NONE;
+			    WHEN others => null;
 			  end case;
       -- BRANCH OPERATION
-			when	OP_BRANCH =>
-        println("Conditional");
-        println(hstr(std_logic_vector(ir)));
-        println(hstr(std_logic_vector(opcode)));
+			WHEN	OP_BRANCH =>
 			  regwrite <= '0'; -- Do NOT Write into the Register Bank
 
         -- PCSel |        pc
@@ -268,61 +267,90 @@ begin
 
         case (funct3) is
           -- BEQ
-          when "000" =>
+          WHEN "000" =>
             if (alu_A = reg_B) then
               PCSel <= "01";
             else
               PCSel <= "00";
             end if;
           -- BNE
-          when "001" =>
+          WHEN "001" =>
             if (alu_A /= reg_B) then
               PCSel <= "01";
             else
               PCSel <= "00";
             end if;
           -- BLT
-          when "100" =>
+          WHEN "100" =>
             if (alu_A < reg_B) then
               PCSel <= "01";
             else
               PCSel <= "00";
             end if;
           -- BGE
-          when "101" =>
+          WHEN "101" =>
             if (alu_A > reg_B) then
               PCSel <= "01";
             else
               PCSel <= "00";
             end if;
-          -- BLTU
-          when "110" =>
-            if (unsigned(alu_A) < unsigned((reg_B))) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          -- BGEU
-          when "111" =>
+          -- BGTU
+          WHEN "110" =>
             if (unsigned(alu_A) > unsigned((reg_B))) then
               PCSel <= "01";
             else
               PCSel <= "00";
             end if;
-          when others => null;
+          -- BGEU
+          WHEN "111" =>
+            if (unsigned(reg_B) >= unsigned((alu_A))) then
+              PCSel <= "01";
+            else
+              PCSel <= "00";
+            end if;
+          WHEN others => null;
         end case;
       -- UNCONDITIONAL BRANCH
-      when OP_UBRANCH =>
-          println("Unconditional");
+      -- JAL, J
+      WHEN OP_UBRANCH =>
+          --println("Unconditional");
+          regwrite <= '0'; -- Do NOT Write into the Register Bank
+          case (rd) is
+            -- J
+            WHEN "00000" =>
+              println("J");
+            -- JAL
+            WHEN others =>
+              PCSel <= "10"; -- Set the pc directly using branch_imm
+              branch_abs <= shift_right(unsigned(branch_imm), 6);
+          end case;
+      -- JALR
+      -- Similar to JAL, except destination is relative to the value of rs1
+      WHEN OP_LRBRANCH =>
+        case (funct3) is
+          WHEN "000" =>
+          println("JALR");
           println(hstr(std_logic_vector(ir)));
           println(hstr(std_logic_vector(opcode)));
-          case (ir(11 downto 7)) is
-            -- J
-            when "00000" =>
-              println("J");
-            when others => null;
-          end case;
-      when others => null;
+          WHEN others => null;
+        end case;
+      -- LUI
+      WHEN OP_LUI =>
+        regwrite <= '1'; -- Write into the Register Bank
+        op2sel <= "10";  -- The second input to the ALU is the Immediate Value Unsigned
+        alu_func <= ALU_ADD;
+
+      -- AUIPC
+      -- Adds a 20-bit upper immediate to the PC
+      WHEN OP_AUIPC =>
+        case (funct3) is
+          WHEN "000" =>
+          println("AUIPC");
+          println(hstr(std_logic_vector(ir)));
+          println(hstr(std_logic_vector(opcode)));
+          WHEN others => null;
+        end case;
+      WHEN others => null;
 		 end case;
     end process;
 
@@ -345,28 +373,10 @@ begin
 			   pc <= pc + 4;
       -- PC + BRANCH
       elsif (PCSel = "01") then
-          println("Branch");
-          println(hstr(std_logic_vector(branch_imm)));
-          println("Branch + pc");
-          println(hstr(std_logic_vector((unsigned(pc + branch_imm)))));
-          println("Branch + pc shift derecha 1");
-          println(hstr(std_logic_vector(shift_right(unsigned((pc + branch_imm)), 1))));
-          println("Branch + pc shift derecha 2");
-          println(hstr(std_logic_vector(shift_right(unsigned((pc + branch_imm)), 2))));
-          println("Branch + pc shift derecha 3");
-          println(hstr(std_logic_vector(shift_right(unsigned((pc + branch_imm)), 3))));
-          println("******* IZQ ********");
-          println("Branch + pc shift izquierda 1");
-          println(hstr(std_logic_vector(shift_left(unsigned((pc + branch_imm)), 1))));
-          println("Branch + pc shift izquierda 2");
-          println(hstr(std_logic_vector(shift_left(unsigned((pc + branch_imm)), 2))));
-          println("Branch + pc shift izquierda 3");
-          println(hstr(std_logic_vector(shift_left(unsigned((pc + branch_imm)), 3))));
-          println(hstr(std_logic_vector(pc)));
-          -- EL PUTO 4 *
-  			  pc <= shift_right(unsigned(pc + branch_imm), 0);
+  			  pc <= unsigned(pc + branch_imm);
+      -- PC <= BRANCH
       elsif (PCSel = "10") then
-          pc <= branch_abs;
+        pc <= branch_abs;
       elsif (PCSel = "11") then
           pc <= branch_abs;
   		end if;

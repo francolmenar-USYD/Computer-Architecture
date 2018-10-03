@@ -53,7 +53,7 @@ begin
         reset <= '1';
         wait for clk_period * 2;
         reset <= '0';
-		wait for clk_period * 50;
+		wait for clk_period * 10;
 				-- assert (pout = x"00000030") report "error pc" severity failure;
         assert false report "success - end of simulation" severity failure;
     end process;
