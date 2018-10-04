@@ -20,10 +20,6 @@ end part1;
 
 architecture behavioral of part1 is
 
--- Constant Variables
-signal pcMain : unsigned(word'range) := x"00000000";
-signal pcNprimes : unsigned(word'range) := x"00000000";
-
 --          ALU signals
 signal alu_func : alu_func_t := ALU_NONE; -- ALU Function
 signal alu_A : word := x"00000000";       -- ALU input A
@@ -153,7 +149,7 @@ begin
   -- Select the second input to the ALU
 	alu_B <= reg_B WHEN op2sel = "00" else
 			imm WHEN op2sel = "01" else
-      unsigned(imm) WHEN op2sel = "10" else
+            std_logic_vector(unsigned(imm)) WHEN op2sel = "10" else
 			imm_rd;
 
 
@@ -181,9 +177,10 @@ begin
 	branch_imm(31 downto 13) <= (others => ir(31));
 	branch_imm(12 downto 0) <= unsigned(ir(31) & ir(7) &
 								ir(30 downto 25) & ir(11 downto 8) & '0');
+	jump_imm()
 
   --                  DECODE
-   decode_proc : process (funct7, funct3, opcode) is
+   decode_proc : process (ir, funct7, funct3, opcode, alu_A,reg_B) is
 	begin
     -- All the values to 0 as a default
 		regwrite <= '0';
@@ -265,62 +262,69 @@ begin
         --  "10" |     branch_abs
         --  "11" |     branch_imm
 
-        case (funct3) is
-          -- BEQ
-          WHEN "000" =>
-            if (alu_A = reg_B) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          -- BNE
-          WHEN "001" =>
-            if (alu_A /= reg_B) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          -- BLT
-          WHEN "100" =>
-            if (alu_A < reg_B) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          -- BGE
-          WHEN "101" =>
-            if (alu_A > reg_B) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          -- BGTU
-          WHEN "110" =>
-            if (unsigned(alu_A) > unsigned((reg_B))) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          -- BGEU
-          WHEN "111" =>
-            if (unsigned(reg_B) >= unsigned((alu_A))) then
-              PCSel <= "01";
-            else
-              PCSel <= "00";
-            end if;
-          WHEN others => null;
-        end case;
+				case (funct3) is
+				  -- BEQ
+				  WHEN "000" =>
+					if (alu_A = reg_B) then
+					  PCSel <= "01";
+					else
+					  PCSel <= "00";
+					end if;
+				  -- BNE
+				  WHEN "001" =>
+					if (alu_A /= reg_B) then
+					  PCSel <= "01";
+					else
+					  PCSel <= "00";
+					end if;
+				  -- BLT
+				  WHEN "100" =>
+					if (alu_A < reg_B) then
+					  PCSel <= "01";
+					else
+					  PCSel <= "00";
+					end if;
+				  -- BGE
+				  WHEN "101" =>
+					if (alu_A > reg_B) then
+					  PCSel <= "01";
+					else
+					  PCSel <= "00";
+					end if;
+				  -- BGTU
+				  WHEN "110" =>
+					if (unsigned(alu_A) > unsigned((reg_B))) then
+					  PCSel <= "01";
+					else
+					  PCSel <= "00";
+					end if;
+				  -- BGEU
+				  WHEN "111" =>
+					if (unsigned(alu_A) >= unsigned(( reg_B))) then
+					  PCSel <= "01";
+					else
+					  PCSel <= "00";
+					end if;
+				  WHEN others => null;
+				end case;
       -- UNCONDITIONAL BRANCH
       -- JAL, J
       WHEN OP_UBRANCH =>
-          --println("Unconditional");
+          println("Unconditional");
           regwrite <= '0'; -- Do NOT Write into the Register Bank
           case (rd) is
             -- J
             WHEN "00000" =>
               println("J");
+			  PCSel <= "10"; -- Set the pc directly using branch_imm
+			  println(hstr(std_logic_vector(branch_imm)));
+			  println(hstr(std_logic_vector(ir)));
+			  --println(hstr(shift_right(unsigned(branch_imm), 6)));
+              branch_abs <= shift_right(unsigned(branch_imm), 6);
             -- JAL
             WHEN others =>
+			  println("JAL");
+			  println(hstr(std_logic_vector(branch_imm)));
               PCSel <= "10"; -- Set the pc directly using branch_imm
               branch_abs <= shift_right(unsigned(branch_imm), 6);
           end case;
@@ -366,7 +370,7 @@ begin
     -- Check reset
 		if (reset = '1') then
       -- When we reset we start in the main
-			pc <= pcMain;
+			pc <= (others=>'0');
 		elsif rising_edge(clk) then
       -- PC+4
 		  if( PCSel = "00") then
